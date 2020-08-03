@@ -8,6 +8,7 @@ Fetch Github PRs by organization team name and display pertinant details
 
 ## Configuration
 * `PR_RADIATOR_TOKEN`: Github Personal Access Token (https://github.com/settings/token)
+  * `read:org, repo` scopes needed and SSO for organization needs to be enabled
 * `PR_RADIATOR_REPOS`: Array of strings of the repos to query
 * `PR_RADIATOR_IGNORE_REPOS`: Array of strings of the repos to ignore
 * `PR_RADIATOR_POLLING_INTERVAL`: Interval to poll github for PR information in milliseconds
