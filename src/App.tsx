@@ -138,7 +138,7 @@ function App() {
 
   let displayPRs = null;
   if (PRs.length > 0) {
-    displayPRs = PRs.map((pr: any) => <PR key={pr.url} pr={pr} />);
+    displayPRs = PRs.map((pr: any) => pr.isDraft ? null : <PR key={pr.url} pr={pr} />);
   }
 
   if (githubToken.length === 0 || owner.length === 0 || !team) {

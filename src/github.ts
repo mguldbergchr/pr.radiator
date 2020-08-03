@@ -27,7 +27,7 @@ const RepositoriesQuery = (owner: string, team: string, next: string | null) => 
 const QueryPRs = (owner: string, repo: string) => `
 query PRs {
   repository(owner: "${owner}", name: "${repo}") {name pullRequests(first: 20, states: OPEN) {nodes {
-		title url createdAt baseRefName headRefOid
+		title url createdAt baseRefName headRefOid isDraft
 		author { login }
 		comments(first: 50) {nodes {
       createdAt author { login }
@@ -45,7 +45,7 @@ const BatchQueryPRs = (owner: string, repos: string[]) => {
   const batchedRepos = repos.map((repo, index) => {
     const repoFieldAlias = 'alias' +  index;
     return `${repoFieldAlias}:repository(owner: "${owner}", name: "${repo}") {name pullRequests(first: 20, states: OPEN) {nodes {
-		title url createdAt baseRefName headRefOid
+		title url createdAt baseRefName headRefOid isDraft
 		author { login }
 		comments(first: 50) {nodes {
       createdAt author { login }
