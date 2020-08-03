@@ -1,5 +1,7 @@
 Fetch Github PRs by organization team name and display pertinant details
 
+![Example Screenshot](./example-screenshot.png)
+
 ## Features
 * Fetch PR information for a set of repository names in under 2 seconds
 * Poll for PR information on a specified interval
