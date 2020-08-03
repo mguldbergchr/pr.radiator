@@ -1,5 +1,5 @@
 import React from 'react';
-import { addWeeks, addDays, addHours, isAfter, formatRFC3339 } from 'date-fns';
+import { addWeeks, addDays, addHours, isAfter, formatRFC3339, formatDistanceToNow } from 'date-fns';
 import sortByCreatedAt from './utils';
 
 type Event = {
@@ -84,7 +84,7 @@ const PR = (props: any) => {
 
   return (
     <div className={getAgeString(createdAt)}>
-      {formatRFC3339(createdAt)} {props.pr.baseRefName} {props.pr.author.login} {getCommitState(props.pr.headRefOid, props.pr.timeline)}&nbsp;
+      <span title={formatRFC3339(createdAt)}>{formatDistanceToNow(createdAt)} ago</span> {props.pr.baseRefName} {props.pr.author.login} {getCommitState(props.pr.headRefOid, props.pr.timeline)}&nbsp;
       <a href={props.pr.url}>{props.pr.url}</a>&nbsp;
       {props.pr.title}
       <br />
