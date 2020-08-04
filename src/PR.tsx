@@ -1,5 +1,5 @@
 import React from 'react';
-import { addWeeks, addDays, addHours, isAfter, formatRFC3339, formatDistanceToNow } from 'date-fns';
+import { addWeeks, addDays, addHours, isAfter, formatRFC3339, formatDistanceToNowStrict } from 'date-fns';
 import sortByCreatedAt from './utils';
 
 type Event = {
@@ -79,14 +79,17 @@ const Event = (props: Event) => {
 }
 
 const PR = (props: any) => {
-  const createdAt = new Date(props.pr.createdAt);
-  const events = combineReviewsAndComments(props.pr.reviews, props.pr.comments);
+  const { createdAt, reviews, comments, baseRefName, author, headRefOid, timeline, url, repository, title } = props.pr;
+  const createdAtDate = new Date(createdAt);
+  const events = combineReviewsAndComments(reviews, comments);
+  const timeDistance = <span title={formatRFC3339(createdAtDate)}>{formatDistanceToNowStrict(createdAtDate)} ago</span>;
+  const commitState = getCommitState(headRefOid, timeline);
 
   return (
-    <div className={getAgeString(createdAt)}>
-      <span title={formatRFC3339(createdAt)}>{formatDistanceToNow(createdAt)} ago</span> {props.pr.baseRefName} {props.pr.author.login} {getCommitState(props.pr.headRefOid, props.pr.timeline)}&nbsp;
-      <a href={props.pr.url} target="_blank" rel="noopener noreferrer">{props.pr.url}</a>&nbsp;
-      {props.pr.title}
+    <div className={getAgeString(createdAtDate)}>
+      {timeDistance} {baseRefName} {author.login} {commitState}&nbsp;
+      <a href={url} target="_blank" rel="noopener noreferrer">{`${repository.name}/pull/${props.pr.number}`}</a>&nbsp;
+      {title}
       <br />
       {events.map((event) => <Event key={event.createdAt} {...event} />)}
     </div>
