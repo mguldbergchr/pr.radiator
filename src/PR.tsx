@@ -85,7 +85,7 @@ const PR = (props: any) => {
   return (
     <div className={getAgeString(createdAt)}>
       <span title={formatRFC3339(createdAt)}>{formatDistanceToNow(createdAt)} ago</span> {props.pr.baseRefName} {props.pr.author.login} {getCommitState(props.pr.headRefOid, props.pr.timeline)}&nbsp;
-      <a href={props.pr.url}>{props.pr.url}</a>&nbsp;
+      <a href={props.pr.url} target="_blank" rel="noopener noreferrer">{props.pr.url}</a>&nbsp;
       {props.pr.title}
       <br />
       {events.map((event) => <Event key={event.createdAt} {...event} />)}
