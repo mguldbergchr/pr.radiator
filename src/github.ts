@@ -99,6 +99,8 @@ export const maxConcurrentBatchQueryPRs = (token: string, owner: string, repos: 
   });
 };
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export const queryTeamRepos = async (token: string, owner: string, team: string) => {
   let hasNextPage = true;
   let next: string | null = null;
@@ -121,6 +123,11 @@ export const queryTeamRepos = async (token: string, owner: string, team: string)
     });
     hasNextPage = repositories.pageInfo.hasNextPage;
     next = repositories.pageInfo.endCursor;
+
+    /* https://developer.github.com/v3/guides/best-practices-for-integrators/#dealing-with-abuse-rate-limits
+     * If you're making a large number of POST, PATCH, PUT, or DELETE requests for a single user or client ID,
+     * wait at least one second between each request. */
+    await sleep(1000);
   }
 
   return repoNames;
