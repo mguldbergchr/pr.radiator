@@ -50,8 +50,8 @@ const getCommitState = (headRefOid: string, timeline: any) => {
   const commit = timeline.nodes.find((commit: any) => commit.oid === headRefOid);
   const [checkmark, circle, cross] = ['\u2714', '\u25cf', '\u2613'];
 
-  if (!commit.status) {
-    return null;
+  if (!commit?.status) {
+    return <span className="missing">-</span>;
   } else if (commit.status.state === 'SUCCESS') {
     return <span className="success">{checkmark}</span>;
   } else if (commit.status.state === 'PENDING') {
