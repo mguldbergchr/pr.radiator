@@ -1,7 +1,6 @@
 import React, { useEffect, useState, FormEvent, useRef } from 'react';
 import PR from './PR';
-import { maxConcurrentBatchQueryPRs, queryTeamRepos } from './github';
-import sortByCreatedAt from './utils';
+import { queryPRs, queryTeamRepos } from './github';
 
 function useInterval(callback: any, delay: any) {
   const savedCallback = useRef();
@@ -22,15 +21,21 @@ function useInterval(callback: any, delay: any) {
   }, [delay]);
 }
 
-function App() {
-  const [PRs, setPRs] = useState<any[]>([]);
-
+const initialize = () => {
   const githubTokenData = localStorage.getItem('PR_RADIATOR_TOKEN');
   const ownerData = localStorage.getItem('PR_RADIATOR_OWNER');
   const teamData = localStorage.getItem('PR_RADIATOR_TEAM');
   const reposData = localStorage.getItem('PR_RADIATOR_REPOS');
   const ignoreReposData = localStorage.getItem('PR_RADIATOR_IGNORE_REPOS');
   const pollingIntervalData = localStorage.getItem('PR_RADIATOR_POLLING_INTERVAL');
+
+  return { githubTokenData, ownerData, teamData, reposData, ignoreReposData, pollingIntervalData };
+}
+
+function App() {
+  const [PRs, setPRs] = useState<any[]>([]);
+
+  const { githubTokenData, ownerData, teamData, reposData, ignoreReposData, pollingIntervalData } = initialize();
 
   const [githubToken, setGithubToken] = useState(githubTokenData ? githubTokenData : '');
   const [owner, setOwner] = useState(ownerData ? ownerData : '');
@@ -79,23 +84,10 @@ function App() {
   useEffect(() => {
     async function getPRsFromGithub(token: string, owner: string, repos: string[]) {
       try {
-        const results = await Promise.all(maxConcurrentBatchQueryPRs(token, owner, repos));
-        const resultPRs: any[] = [];
-        results.forEach((result: any) => {
-          const keys = Object.keys(result.data.data);
-          keys.forEach((key) => {
-            const pullRequests = result.data.data[key].pullRequests.nodes;
-            if (pullRequests.length > 0) {
-              resultPRs.push(...pullRequests);
-            }
-          });
-        });
+        const PRs = await queryPRs(token, owner, repos);
+        setPRs(PRs);
 
-        const sortedPRs = resultPRs.sort(sortByCreatedAt).filter(pr => !pr.isDraft);
-
-        setPRs(sortedPRs);
-
-        document.title = `(${sortedPRs.length}) PR Radiator`;
+        document.title = `(${PRs.length}) PR Radiator`;
       } catch {
         console.log('Failed to fetch PRs');
       }
@@ -109,23 +101,10 @@ function App() {
   useInterval(() => {
     async function getPRsFromGithub(token: string, owner: string, repos: string[]) {
       try {
-        const results = await Promise.all(maxConcurrentBatchQueryPRs(token, owner, repos));
-        const resultPRs: any[] = [];
-        results.forEach((result: any) => {
-          const keys = Object.keys(result.data.data);
-          keys.forEach((key) => {
-            const pullRequests = result.data.data[key].pullRequests.nodes;
-            if (pullRequests.length > 0) {
-              resultPRs.push(...pullRequests);
-            }
-          });
-        });
+        const PRs = await queryPRs(token, owner, repos);
+        setPRs(PRs);
 
-        const sortedPRs = resultPRs.sort(sortByCreatedAt).filter(pr => !pr.isDraft);
-
-        setPRs(sortedPRs);
-
-        document.title = `(${sortedPRs.length}) PR Radiator`;
+        document.title = `(${PRs.length}) PR Radiator`;
       } catch {
         console.log('Failed to fetch PRs');
       }
@@ -136,10 +115,7 @@ function App() {
     }
   }, pollingInterval ? pollingInterval : null);
 
-  let displayPRs = null;
-  if (PRs.length > 0) {
-    displayPRs = PRs.map((pr: any) => <PR key={pr.url} pr={pr} />);
-  }
+  const displayPRs = PRs.length > 0 ? PRs.map((pr: any) => <PR key={pr.url} pr={pr} />) : null;
 
   if (githubToken.length === 0 || owner.length === 0 || !team) {
     return (
