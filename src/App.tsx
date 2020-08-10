@@ -21,29 +21,16 @@ function useInterval(callback: any, delay: any) {
   }, [delay]);
 }
 
-const initialize = () => {
-  const githubTokenData = localStorage.getItem('PR_RADIATOR_TOKEN');
-  const ownerData = localStorage.getItem('PR_RADIATOR_OWNER');
-  const teamData = localStorage.getItem('PR_RADIATOR_TEAM');
-  const reposData = localStorage.getItem('PR_RADIATOR_REPOS');
-  const ignoreReposData = localStorage.getItem('PR_RADIATOR_IGNORE_REPOS');
-  const pollingIntervalData = localStorage.getItem('PR_RADIATOR_POLLING_INTERVAL');
-
-  return { githubTokenData, ownerData, teamData, reposData, ignoreReposData, pollingIntervalData };
-}
-
 function App() {
   const [PRs, setPRs] = useState<any[]>([]);
   const [intervalInput, setIntervalInput] = useState(60);
 
-  const { githubTokenData, ownerData, teamData, reposData, ignoreReposData, pollingIntervalData } = initialize();
-
-  const [githubToken, setGithubToken] = useState(githubTokenData ? githubTokenData : '');
-  const [owner, setOwner] = useState(ownerData ? ownerData : '');
-  const [team, setTeam] = useState(teamData ? teamData : '');
-  const [repos, setRepos] = useState(reposData ? JSON.parse(reposData) : []);
-  const [ignoreRepos] = useState(ignoreReposData ? JSON.parse(ignoreReposData) : []);
-  const [pollingInterval, setPollingInterval] = useState(pollingIntervalData ? parseInt(pollingIntervalData) : null);
+  const [githubToken, setGithubToken] = useState(() => localStorage.getItem('PR_RADIATOR_TOKEN') ?? '');
+  const [owner, setOwner] = useState(() => localStorage.getItem('PR_RADIATOR_OWNER') ?? '');
+  const [team, setTeam] = useState(() => localStorage.getItem('PR_RADIATOR_TEAM') ?? '');
+  const [repos, setRepos] = useState(() => JSON.parse(localStorage.getItem('PR_RADIATOR_REPOS') ?? '[]'));
+  const [ignoreRepos] = useState(() => JSON.parse(localStorage.getItem('PR_RADIATOR_IGNORE_REPOS') ?? '[]'));
+  const [pollingInterval, setPollingInterval] = useState(() => parseInt(localStorage.getItem('PR_RADIATOR_POLLING_INTERVAL') ?? '0'));
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -56,7 +43,7 @@ function App() {
     localStorage.setItem('PR_RADIATOR_OWNER', ownerInput.value);
     localStorage.setItem('PR_RADIATOR_TOKEN', tokenInput.value);
     localStorage.setItem('PR_RADIATOR_TEAM', teamInput.value);
-    if (pollingIntervalInput && pollingIntervalInput.value) {
+    if (pollingIntervalInput?.value) {
       const interval = parseInt(pollingIntervalInput.value) * 1000;
       localStorage.setItem('PR_RADIATOR_POLLING_INTERVAL', interval.toString());
       setPollingInterval(interval);
@@ -114,7 +101,7 @@ function App() {
       const filteredRepos = repos.filter((repo: string) => !ignoreRepos.includes(repo));
       getPRsFromGithub(githubToken, owner, filteredRepos);
     }
-  }, pollingInterval ? pollingInterval : null);
+  }, pollingInterval ?? null);
 
   const displayPRs = PRs.length > 0 ? PRs.map((pr: any) => <PR key={pr.url} pr={pr} />) : null;
   const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => setIntervalInput(parseInt(e.target.value));
@@ -139,11 +126,7 @@ function App() {
     return <div>{`Fetching ${team} team repositories.. This may take up to five minutes`}</div>;
   }
 
-  return (
-    <div className="App">
-      {displayPRs}
-    </div>
-  );
+  return <div className="App">{displayPRs}</div>;
 }
 
 export default App;
