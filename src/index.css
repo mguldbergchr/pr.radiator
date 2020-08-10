@@ -90,6 +90,12 @@ a {
   display: block;
 }
 
+.settings-form input[type=number] {
+  margin-top: 12px;
+  text-align: center;
+  width: 50px;
+}
+
 .settings-form input[type=text]:focus,
 .settings-form input[type=number]:focus,
 .settings-form input[type=password]:focus {

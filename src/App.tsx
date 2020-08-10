@@ -34,6 +34,7 @@ const initialize = () => {
 
 function App() {
   const [PRs, setPRs] = useState<any[]>([]);
+  const [intervalInput, setIntervalInput] = useState(60);
 
   const { githubTokenData, ownerData, teamData, reposData, ignoreReposData, pollingIntervalData } = initialize();
 
@@ -116,6 +117,7 @@ function App() {
   }, pollingInterval ? pollingInterval : null);
 
   const displayPRs = PRs.length > 0 ? PRs.map((pr: any) => <PR key={pr.url} pr={pr} />) : null;
+  const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => setIntervalInput(parseInt(e.target.value));
 
   if (githubToken.length === 0 || owner.length === 0 || !team) {
     return (
@@ -123,9 +125,10 @@ function App() {
         <h1>Configure PR Radiator</h1>
         <form autoComplete="off" onSubmit={onSubmit}>
           <input type="text" id="owner" placeholder="Github Organization" autoFocus={true} autoComplete="off" />
-          <input type="text" id="team" placeholder="Github Team" autoFocus={true} autoComplete="off" />
+          <input type="text" id="team" placeholder="Github Team" autoComplete="off" />
           <input type="password" id="token" placeholder="Github Personal Access Token" autoComplete="new-password" />
-          <div>Github Polling Interval <input type="number" id="polling-interval" placeholder="15" min="5" /> (seconds)</div>
+          <div>
+        Github Polling Interval <input type="number" id="polling-interval" onChange={handleOnChange} value={intervalInput} min="5" /> (seconds)</div>
           <input type="submit" value="Begin" id="submit" />
         </form>
       </div>
