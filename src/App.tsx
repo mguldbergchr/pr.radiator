@@ -14,7 +14,7 @@ function useInterval(callback: any, delay: any) {
       // @ts-ignore
       savedCallback.current();
     }
-    if (delay !== null) {
+    if (delay) {
       let id = setInterval(tick, delay);
       return () => clearInterval(id);
     }
@@ -25,49 +25,46 @@ function App() {
   const [PRs, setPRs] = useState<any[]>([]);
   const [intervalInput, setIntervalInput] = useState(60);
 
-  const [githubToken, setGithubToken] = useState(() => localStorage.getItem('PR_RADIATOR_TOKEN') ?? '');
-  const [owner, setOwner] = useState(() => localStorage.getItem('PR_RADIATOR_OWNER') ?? '');
-  const [team, setTeam] = useState(() => localStorage.getItem('PR_RADIATOR_TEAM') ?? '');
-  const [repos, setRepos] = useState(() => JSON.parse(localStorage.getItem('PR_RADIATOR_REPOS') ?? '[]'));
-  const [ignoreRepos] = useState(() => JSON.parse(localStorage.getItem('PR_RADIATOR_IGNORE_REPOS') ?? '[]'));
-  const [pollingInterval, setPollingInterval] = useState(() => parseInt(localStorage.getItem('PR_RADIATOR_POLLING_INTERVAL') ?? '0'));
+  const [config, setConfig] = useState(() => ({
+    token: localStorage.getItem('PR_RADIATOR_TOKEN') ?? '',
+    owner: localStorage.getItem('PR_RADIATOR_OWNER') ?? '',
+    team: localStorage.getItem('PR_RADIATOR_TEAM') ?? '',
+    repos: JSON.parse(localStorage.getItem('PR_RADIATOR_REPOS') ?? '[]'),
+    pollingInterval: parseInt(localStorage.getItem('PR_RADIATOR_POLLING_INTERVAL') ?? '0'),
+    ignoreRepos: JSON.parse(localStorage.getItem('PR_RADIATOR_IGNORE_REPOS') ?? '[]')
+  }));
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
 
-    const ownerInput: HTMLInputElement = document.getElementById('owner') as HTMLInputElement;
-    const tokenInput: HTMLInputElement = document.getElementById('token') as HTMLInputElement;
-    const teamInput: HTMLInputElement = document.getElementById('team') as HTMLInputElement;
+    const owner = (document.getElementById('owner') as HTMLInputElement).value;
+    const token = (document.getElementById('token') as HTMLInputElement).value;
+    const team = (document.getElementById('team') as HTMLInputElement).value;
     const pollingIntervalInput: HTMLInputElement = document.getElementById('polling-interval') as HTMLInputElement;
+    const pollingInterval = pollingIntervalInput?.value ? parseInt(pollingIntervalInput.value) * 1000 : 0;
 
-    localStorage.setItem('PR_RADIATOR_OWNER', ownerInput.value);
-    localStorage.setItem('PR_RADIATOR_TOKEN', tokenInput.value);
-    localStorage.setItem('PR_RADIATOR_TEAM', teamInput.value);
-    if (pollingIntervalInput?.value) {
-      const interval = parseInt(pollingIntervalInput.value) * 1000;
-      localStorage.setItem('PR_RADIATOR_POLLING_INTERVAL', interval.toString());
-      setPollingInterval(interval);
-    }
+    localStorage.setItem('PR_RADIATOR_OWNER', owner);
+    localStorage.setItem('PR_RADIATOR_TOKEN', token);
+    localStorage.setItem('PR_RADIATOR_TEAM', team);
+    localStorage.setItem('PR_RADIATOR_POLLING_INTERVAL', pollingInterval.toString());
 
-    setTeam(teamInput.value);
-    setGithubToken(tokenInput.value);
-    setOwner(ownerInput.value);
+    setConfig({ ...config, team, token, owner, pollingInterval })
   }
 
   useEffect(() => {
     async function getTeamRepos(token: string, owner: string, team: string) {
       try {
-        const repoNames = await queryTeamRepos(token, owner, team);
-        localStorage.setItem('PR_RADIATOR_REPOS', JSON.stringify(repoNames));
-        setRepos(repoNames);
+        const repos = await queryTeamRepos(config.token, config.owner, config.team);
+        localStorage.setItem('PR_RADIATOR_REPOS', JSON.stringify(repos));
+        setConfig({ ...config, repos });
       } catch {
         console.log('Failed to fetch team repos');
       }
     }
-    if (githubToken && owner && team && repos.length === 0) {
-      getTeamRepos(githubToken, owner, team);
+    if (config.token && config.owner && config.team && config.repos.length === 0) {
+      getTeamRepos(config.token, config.owner, config.team);
     }
-  }, [githubToken, owner, team, repos, setRepos]);
+  }, [config]);
 
   useEffect(() => {
     async function getPRsFromGithub(token: string, owner: string, repos: string[]) {
@@ -80,11 +77,11 @@ function App() {
         console.log('Failed to fetch PRs');
       }
     }
-    if (githubToken && owner && repos.length > 0) {
-      const filteredRepos = repos.filter((repo: string) => !ignoreRepos.includes(repo));
-      getPRsFromGithub(githubToken, owner, filteredRepos);
+    if (config.token && config.owner && config.repos.length > 0) {
+      const filteredRepos = config.repos.filter((repo: string) => !config.ignoreRepos.includes(repo));
+      getPRsFromGithub(config.token, config.owner, filteredRepos);
     }
-  }, [ignoreRepos, githubToken, owner, repos]);
+  }, [config]);
 
   useInterval(() => {
     async function getPRsFromGithub(token: string, owner: string, repos: string[]) {
@@ -97,16 +94,16 @@ function App() {
         console.log('Failed to fetch PRs');
       }
     }
-    if (githubToken && owner && repos.length > 0) {
-      const filteredRepos = repos.filter((repo: string) => !ignoreRepos.includes(repo));
-      getPRsFromGithub(githubToken, owner, filteredRepos);
+    if (config.token && config.owner && config.repos.length > 0) {
+      const filteredRepos = config.repos.filter((repo: string) => !config.ignoreRepos.includes(repo));
+      getPRsFromGithub(config.token, config.owner, filteredRepos);
     }
-  }, pollingInterval ?? null);
+  }, config.pollingInterval);
 
   const displayPRs = PRs.length > 0 ? PRs.map((pr: any) => <PR key={pr.url} pr={pr} />) : null;
   const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => setIntervalInput(parseInt(e.target.value));
 
-  if (githubToken.length === 0 || owner.length === 0 || !team) {
+  if (!config.token || !config.owner || !config.team) {
     return (
       <div className="settings-form">
         <h1>Configure PR Radiator</h1>
@@ -122,8 +119,8 @@ function App() {
     );
   }
 
-  if (repos.length === 0) {
-    return <div>{`Fetching ${team} team repositories.. This may take up to five minutes`}</div>;
+  if (config.repos.length === 0) {
+    return <div>{`Fetching ${config.team} team repositories.. This may take up to five minutes`}</div>;
   }
 
   return <div className="App">{displayPRs}</div>;
