@@ -106,7 +106,7 @@ export const queryPRs = async (token: string, owner: string, repos: string[]) =>
   results.forEach((result: any) => {
     const keys = Object.keys(result.data.data);
     keys.forEach((key) => {
-      const pullRequests = result.data.data[key].pullRequests.nodes;
+      const pullRequests = result.data.data[key]?.pullRequests.nodes ?? [];
       if (pullRequests.length > 0) {
         resultPRs.push(...pullRequests);
       }
