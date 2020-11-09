@@ -61,7 +61,7 @@ const getCommitState = (headRefOid: string, timeline: any) => {
   return <span className="failed">{cross}</span>;
 }
 
-const Event = (props: Event) => {
+const TimelineEvent = (props: Event) => {
   const [checkmark, bubble, cross] = ['\u2714', '\u{0001F4AC}', '\u2613'];
 
   if (props.state === 'APPROVED') {
@@ -91,7 +91,7 @@ const PR = (props: any) => {
       <a href={url} target="_blank" rel="noopener noreferrer">{`${repository.name}/pull/${props.pr.number}`}</a>&nbsp;
       {title}
       <br />
-      {events.map((event) => <Event key={event.createdAt} {...event} />)}
+      {events.map((event) => <TimelineEvent key={event.createdAt} {...event} />)}
     </div>
   );
 }
