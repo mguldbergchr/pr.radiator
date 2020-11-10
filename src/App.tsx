@@ -21,9 +21,11 @@ function useInterval(callback: any, delay: any) {
   }, [delay]);
 }
 
+
 function App() {
   const [PRs, setPRs] = useState<any[]>([]);
   const [intervalInput, setIntervalInput] = useState(60);
+  const [showCodeOwnerPRs, setShowCodeOwnerPRs] = useState(false);
 
   const [config, setConfig] = useState(() => ({
     token: localStorage.getItem('PR_RADIATOR_TOKEN') ?? '',
@@ -52,6 +54,16 @@ function App() {
   }
 
   useEffect(() => {
+    function onKeydown(event: any) {
+      if (event.keyCode === 67) {
+        setShowCodeOwnerPRs(!showCodeOwnerPRs);
+      }
+    }
+    window.addEventListener('keydown', onKeydown);
+    return () => window.removeEventListener('keydown', onKeydown);
+  }, [showCodeOwnerPRs]);
+
+  useEffect(() => {
     async function getTeamRepos(token: string, owner: string, team: string) {
       try {
         const repos = await queryTeamRepos(config.token, config.owner, config.team);
@@ -71,8 +83,6 @@ function App() {
       try {
         const PRs = await queryPRs(token, owner, repos);
         setPRs(PRs);
-
-        document.title = `(${PRs.length}) PR Radiator`;
       } catch {
         console.log('Failed to fetch PRs');
       }
@@ -88,8 +98,6 @@ function App() {
       try {
         const PRs = await queryPRs(token, owner, repos);
         setPRs(PRs);
-
-        document.title = `(${PRs.length}) PR Radiator`;
       } catch {
         console.log('Failed to fetch PRs');
       }
@@ -100,7 +108,9 @@ function App() {
     }
   }, config.pollingInterval);
 
-  const displayPRs = PRs.length > 0 ? PRs.map((pr: any) => <PR key={pr.url} pr={pr} />) : null;
+  const isViewerCodeOwner = (reviewRequests: any) => reviewRequests.nodes.some((req: any) => req.requestedReviewer.isViewer);
+  const filter = (pr: any) => !showCodeOwnerPRs || (showCodeOwnerPRs && isViewerCodeOwner(pr.reviewRequests));
+  const displayPRs = PRs.length > 0 ? PRs.filter(filter).map(pr => <PR key={pr.url} pr={pr} showCodeOwnerPRs={showCodeOwnerPRs} />) : null;
   const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => setIntervalInput(parseInt(e.target.value));
 
   if (!config.token || !config.owner || !config.team) {
@@ -122,6 +132,8 @@ function App() {
   if (config.repos.length === 0) {
     return <div>{`Fetching ${config.team} team repositories.. This may take up to five minutes`}</div>;
   }
+
+  document.title = `(${displayPRs?.length}) PR Radiator`;
 
   return <div className="App">{displayPRs}</div>;
 }
