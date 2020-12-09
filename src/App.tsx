@@ -109,8 +109,9 @@ function App() {
   }, config.pollingInterval);
 
   const isViewerCodeOwner = (reviewRequests: any) => reviewRequests.nodes.some((req: any) => req.requestedReviewer.isViewer);
-  const filter = (pr: any) => !showCodeOwnerPRs || (showCodeOwnerPRs && isViewerCodeOwner(pr.reviewRequests));
-  const displayPRs = PRs.length > 0 ? PRs.filter(filter).map(pr => <PR key={pr.url} pr={pr} showCodeOwnerPRs={showCodeOwnerPRs} />) : null;
+  const isViewerParticipant = (participants: any) => participants.nodes.some((participant: any) => participant.isViewer)
+  const filterCombined = (pr: any) => !showCodeOwnerPRs || (isViewerCodeOwner(pr.reviewRequests) || isViewerParticipant(pr.participants));
+  const displayPRs = PRs.length > 0 ? PRs.filter(filterCombined).map(pr => <PR key={pr.url} pr={pr} />) : null;
   const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => setIntervalInput(parseInt(e.target.value));
 
   if (!config.token || !config.owner || !config.team) {

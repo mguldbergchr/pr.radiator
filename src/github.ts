@@ -30,6 +30,7 @@ const BatchQueryPRs = (owner: string, repos: string[]) => {
     const repoFieldAlias = 'alias' +  index;
     return `${repoFieldAlias}:repository(owner: "${owner}", name: "${repo}") {name pullRequests(first: 20, states: OPEN) {nodes {
 		title url createdAt baseRefName headRefOid isDraft number
+		participants (first: 10) { nodes { isViewer login }}
 		reviewRequests(first:20) {nodes {asCodeOwner requestedReviewer { __typename ... on User { login isViewer }}}}
 		repository { name }
 		author { login }
