@@ -1,10 +1,23 @@
+FROM node:alpine AS BUILD_IMAGE
+
+WORKDIR /usr/src/app
+
+COPY package.json .
+COPY package-lock.json .
+
+RUN npm ci
+
+COPY . .
+
+RUN npm run build
+
 FROM node:alpine
 
 WORKDIR /usr/src/app
 
-COPY . .
+RUN npm install -g serve
 
-RUN npm ci
+COPY --from=BUILD_IMAGE /usr/src/app/build .
 
 EXPOSE 3000
-CMD ["npm", "run", "start"]
+CMD ["serve", "-l", "3000"]
