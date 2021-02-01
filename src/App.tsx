@@ -26,6 +26,7 @@ function App() {
   const [PRs, setPRs] = useState<any[]>([]);
   const [intervalInput, setIntervalInput] = useState(60);
   const [showCodeOwnerPRs, setShowCodeOwnerPRs] = useState(false);
+  const [showDependabotPRs, toggleDependabotPRs] = useState(true);
 
   const [config, setConfig] = useState(() => ({
     token: localStorage.getItem('PR_RADIATOR_TOKEN') ?? '',
@@ -58,10 +59,13 @@ function App() {
       if (event.keyCode === 67) {
         setShowCodeOwnerPRs(!showCodeOwnerPRs);
       }
+      if (event.keyCode === 68) {
+        toggleDependabotPRs(!showDependabotPRs);
+      }
     }
     window.addEventListener('keydown', onKeydown);
     return () => window.removeEventListener('keydown', onKeydown);
-  }, [showCodeOwnerPRs]);
+  }, [showCodeOwnerPRs, showDependabotPRs]);
 
   useEffect(() => {
     async function getTeamRepos(token: string, owner: string, team: string) {
@@ -111,7 +115,9 @@ function App() {
   const isViewerCodeOwner = (reviewRequests: any) => reviewRequests.nodes.some((req: any) => req.requestedReviewer.isViewer);
   const isViewerParticipant = (participants: any) => participants.nodes.some((participant: any) => participant.isViewer)
   const filterCombined = (pr: any) => !showCodeOwnerPRs || (isViewerCodeOwner(pr.reviewRequests) || isViewerParticipant(pr.participants));
-  const displayPRs = PRs.length > 0 ? PRs.filter(filterCombined).map(pr => <PR key={pr.url} pr={pr} />) : null;
+  const filterDependabot = (pr: any) => !showDependabotPRs || pr.author.login !== 'dependabot';
+  const combinedPRs = PRs.length > 0 ? PRs.filter(filterCombined): null;
+  const displayPRs = combinedPRs && combinedPRs.length > 0 ? combinedPRs.filter(filterDependabot).map(pr => <PR key={pr.url} pr={pr} />) : null;
   const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => setIntervalInput(parseInt(e.target.value));
 
   if (!config.token || !config.owner || !config.team) {
