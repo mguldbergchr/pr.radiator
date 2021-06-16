@@ -56,16 +56,23 @@ function App() {
 
   useEffect(() => {
     function onKeydown(event: any) {
+      // 'c' toggles code owned or participated in PR visibility
       if (event.keyCode === 67) {
         setShowCodeOwnerPRs(!showCodeOwnerPRs);
       }
+      // 'd' toggles dependabot PR visibility
       if (event.keyCode === 68) {
         toggleDependabotPRs(!showDependabotPRs);
+      }
+      // '\' backslash clears repo names to trigger refetching
+      if (event.keyCode === 220) {
+        localStorage.removeItem('PR_RADIATOR_REPOS');
+        setConfig({ ...config, repos: [] });
       }
     }
     window.addEventListener('keydown', onKeydown);
     return () => window.removeEventListener('keydown', onKeydown);
-  }, [showCodeOwnerPRs, showDependabotPRs]);
+  }, [showCodeOwnerPRs, showDependabotPRs, config]);
 
   useEffect(() => {
     async function getTeamRepos(token: string, owner: string, team: string) {
