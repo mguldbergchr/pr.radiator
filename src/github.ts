@@ -28,7 +28,7 @@ const RepositoriesQuery = (owner: string, team: string, next: string | null) => 
 const BatchQueryPRs = (owner: string, repos: string[]) => {
   const batchedRepos = repos.map((repo, index) => {
     const repoFieldAlias = 'alias' +  index;
-    return `${repoFieldAlias}:repository(owner: "${owner}", name: "${repo}") {name pullRequests(first: 20, states: OPEN) {nodes {
+    return `${repoFieldAlias}:repository(owner: "${owner}", name: "${repo}") {name isArchived pullRequests(first: 20, states: OPEN) {nodes {
 		title url createdAt baseRefName headRefOid isDraft number
 		participants (first: 10) { nodes { isViewer login }}
 		reviewRequests(first:20) {nodes {asCodeOwner requestedReviewer { __typename ... on User { login isViewer }}}}
@@ -109,7 +109,7 @@ export const queryPRs = async (token: string, owner: string, repos: string[]) =>
     const keys = Object.keys(result.data.data);
     keys.forEach((key) => {
       const pullRequests = result.data.data[key]?.pullRequests.nodes ?? [];
-      if (pullRequests.length > 0) {
+      if (pullRequests.length > 0 && !result.data.data[key].isArchived) {
         resultPRs.push(...pullRequests);
       }
     });
