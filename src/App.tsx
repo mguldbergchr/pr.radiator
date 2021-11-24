@@ -119,13 +119,32 @@ function App() {
     }
   }, config.pollingInterval);
 
+  useEffect(() => {
+    async function getPRsStatsFromGithub(token: string, owner: string, repos: string[]) {
+      try {
+        const PRs = await queryGitHubForPRStats(token, owner, repos);
+        setPRs(PRs);
+      } catch {
+        console.log('Failed to fetch PRs');
+      }
+    }
+    if (config.token && config.owner && config.repos.length > 0) {
+      const filteredRepos = config.repos.filter((repo: string) => !config.ignoreRepos.includes(repo));
+      getPRsStatsFromGithub(config.token, config.owner, filteredRepos);
+    }
+  }, [config]);
+
   const isViewerCodeOwner = (reviewRequests: any) => reviewRequests.nodes.some((req: any) => req.requestedReviewer.isViewer);
   const isViewerParticipant = (participants: any) => participants.nodes.some((participant: any) => participant.isViewer)
   const filterCombined = (pr: any) => !showCodeOwnerPRs || (isViewerCodeOwner(pr.reviewRequests) || isViewerParticipant(pr.participants));
   const filterDependabot = (pr: any) => !showDependabotPRs || pr.author.login !== 'dependabot';
-  const combinedPRs = PRs.length > 0 ? PRs.filter(filterCombined): null;
+  const combinedPRs = PRs.length > 0 ? PRs.filter(filterCombined) : null;
   const displayPRs = combinedPRs && combinedPRs.length > 0 ? combinedPRs.filter(filterDependabot).map(pr => <PR key={pr.url} pr={pr} />) : null;
   const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => setIntervalInput(parseInt(e.target.value));
+
+
+  const innerSourcePRsFiltered = combinedPRs && combinedPRs.length > 0 ? innerSourcePRs.filter(filterDependabot).map(pr => <PR key={pr.url} pr={pr} />) : null;
+
 
   if (!config.token || !config.owner || !config.team) {
     return (
@@ -136,7 +155,7 @@ function App() {
           <input type="text" id="team" placeholder="Github Team" autoComplete="off" />
           <input type="password" id="token" placeholder="Github Personal Access Token" autoComplete="new-password" />
           <div>
-        Github Polling Interval <input type="number" id="polling-interval" onChange={handleOnChange} value={intervalInput} min="5" /> (seconds)</div>
+            Github Polling Interval <input type="number" id="polling-interval" onChange={handleOnChange} value={intervalInput} min="5" /> (seconds)</div>
           <input type="submit" value="Begin" id="submit" />
         </form>
       </div>
@@ -149,7 +168,10 @@ function App() {
 
   document.title = `(${displayPRs?.length}) PR Radiator`;
 
-  return <div className="App">{displayPRs}</div>;
+  return <div>
+    <div className="App">{displayPRs}</div>
+    <div>{innerSourceStatsFiltered}</div>
+  </div>
 }
 
 export default App;

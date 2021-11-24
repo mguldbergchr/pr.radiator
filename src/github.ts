@@ -2,7 +2,7 @@ import axios from 'axios';
 import sortByCreatedAt from './utils';
 
 const RepositoriesQuery = (owner: string, team: string, next: string | null) => {
-  const after: string = next ? `"${next}"`: 'null';
+  const after: string = next ? `"${next}"` : 'null';
 
   return `{
   organization(login: "${owner}") {
@@ -26,9 +26,10 @@ const RepositoriesQuery = (owner: string, team: string, next: string | null) => 
 }`};
 
 const BatchQueryPRs = (owner: string, repos: string[]) => {
+
   const batchedRepos = repos.map((repo, index) => {
-    const repoFieldAlias = 'alias' +  index;
-    return `${repoFieldAlias}:repository(owner: "${owner}", name: "${repo}") {name isArchived pullRequests(first: 20, states: OPEN) {nodes {
+    const repoFieldAlias = 'alias' + index;
+    return `${repoFieldAlias}:repository(owner: "${owner}", name: "${repo}") {name pullRequests(first: 20, states: OPEN) {nodes {
 		title url createdAt baseRefName headRefOid isDraft number
 		participants (first: 10) { nodes { isViewer login }}
 		reviewRequests(first:20) {nodes {asCodeOwner requestedReviewer { __typename ... on User { login isViewer }}}}
@@ -48,7 +49,30 @@ const BatchQueryPRs = (owner: string, repos: string[]) => {
 
   return `query PRs { ${batchedRepos} }`
 };
+const graphQlQuery = (owner: string, repos: string[]) => {
 
+  const batchedRepos = repos.map((repo, index) => {
+    const repoFieldAlias = 'alias' + index;
+    return `${repoFieldAlias}:repository(owner: "${owner}", name: "${repo}") {name pullRequests(first: 20, states: OPEN) {nodes {
+		title url createdAt baseRefName headRefOid isDraft number
+		participants (first: 10) { nodes { isViewer login }}
+		reviewRequests(first:20) {nodes {asCodeOwner requestedReviewer { __typename ... on User { login isViewer }}}}
+		repository { name }
+		author { login }
+		comments(first: 50) {nodes {
+      createdAt author { login }
+    }}
+		reviews(first: 50) {nodes {
+      state createdAt author { login }
+    }}
+    timeline (first: 50) {nodes {
+      typename: __typename ... on Commit { oid message status { state } }
+    }}
+}}}`;
+  }).join(' ');
+
+  return `query PRs { ${batchedRepos} }`
+};
 const chunks = (array: string[], chunk_size: number) =>
   Array(Math.ceil(array.length / chunk_size))
     .fill(undefined)
@@ -56,6 +80,21 @@ const chunks = (array: string[], chunk_size: number) =>
     .map((begin: any) => array.slice(begin, begin + chunk_size));
 
 export const maxConcurrentBatchQueryPRs = (token: string, owner: string, repos: string[]) => {
+
+  const result = chunks(repos, Math.ceil(repos.length / 6));
+
+  return result.map((repos: string[]) => {
+    return axios({
+      url: 'https://api.github.com/graphql',
+      method: 'post',
+      headers: { Authorization: `Bearer ${token}` },
+      data: { query: BatchQueryPRs(owner, repos) }
+    });
+  });
+};
+
+export const queryGitHub = (token: string, owner: string, repos: string[]) => {
+
   const result = chunks(repos, Math.ceil(repos.length / 6));
 
   return result.map((repos: string[]) => {
@@ -75,7 +114,7 @@ export const queryTeamRepos = async (token: string, owner: string, team: string)
   let next: string | null = null;
   const repoNames: string[] = [];
 
-  while(hasNextPage) {
+  while (hasNextPage) {
     const result: any = await axios({
       url: 'https://api.github.com/graphql',
       method: 'post',
@@ -109,7 +148,22 @@ export const queryPRs = async (token: string, owner: string, repos: string[]) =>
     const keys = Object.keys(result.data.data);
     keys.forEach((key) => {
       const pullRequests = result.data.data[key]?.pullRequests.nodes ?? [];
-      if (pullRequests.length > 0 && !result.data.data[key].isArchived) {
+      if (pullRequests.length > 0) {
+        resultPRs.push(...pullRequests);
+      }
+    });
+  });
+
+  return resultPRs.sort(sortByCreatedAt).filter(pr => !pr.isDraft);
+}
+export const queryGitHubForPRStats = async (token: string, owner: string, repos: string[]) => {
+  const results = await Promise.all(maxConcurrentBatchQueryPRs(token, owner, repos));
+  const resultPRs: any[] = [];
+  results.forEach((result: any) => {
+    const keys = Object.keys(result.data.data);
+    keys.forEach((key) => {
+      const pullRequests = result.data.data[key]?.pullRequests.nodes ?? [];
+      if (pullRequests.length > 0) {
         resultPRs.push(...pullRequests);
       }
     });
