@@ -1,6 +1,7 @@
 import React, { useEffect, useState, FormEvent, useRef } from 'react';
-import PR from './PR';
-import { queryPRs, queryTeamRepos } from './github';
+import { PR, GitHubStats } from './PR';
+import { queryPRs, queryTeamRepos, queryGitHubForPRStats } from './github';
+import { group } from 'console';
 
 function useInterval(callback: any, delay: any) {
   const savedCallback = useRef();
@@ -24,6 +25,7 @@ function useInterval(callback: any, delay: any) {
 
 function App() {
   const [PRs, setPRs] = useState<any[]>([]);
+  const [GitHubPRs, setGitHubPRs] = useState<any[]>([]);
   const [intervalInput, setIntervalInput] = useState(60);
   const [showCodeOwnerPRs, setShowCodeOwnerPRs] = useState(false);
   const [showDependabotPRs, toggleDependabotPRs] = useState(true);
@@ -93,7 +95,7 @@ function App() {
     async function getPRsFromGithub(token: string, owner: string, repos: string[]) {
       try {
         const PRs = await queryPRs(token, owner, repos);
-        setPRs(PRs);
+        setPRs([]);
       } catch {
         console.log('Failed to fetch PRs');
       }
@@ -108,7 +110,7 @@ function App() {
     async function getPRsFromGithub(token: string, owner: string, repos: string[]) {
       try {
         const PRs = await queryPRs(token, owner, repos);
-        setPRs(PRs);
+        setPRs([]);
       } catch {
         console.log('Failed to fetch PRs');
       }
@@ -122,17 +124,50 @@ function App() {
   useEffect(() => {
     async function getPRsStatsFromGithub(token: string, owner: string, repos: string[]) {
       try {
-        const PRs = await queryGitHubForPRStats(token, owner, repos);
-        setPRs(PRs);
+        const GitHubPRs = await queryGitHubForPRStats(token, owner, repos);
+        setGitHubPRs(GitHubPRs);
       } catch {
         console.log('Failed to fetch PRs');
       }
     }
     if (config.token && config.owner && config.repos.length > 0) {
       const filteredRepos = config.repos.filter((repo: string) => !config.ignoreRepos.includes(repo));
+      console.log(filteredRepos)
       getPRsStatsFromGithub(config.token, config.owner, filteredRepos);
     }
   }, [config]);
+
+  const reduceGitHubPRStats = (x: any[] | null) => {
+    console.log(x)
+    const groups = x?.reduce((y, repo) => {
+      if (!y[repo.repository.name]) {
+        y[repo.repository.name] = [];
+      }
+      y[repo.repository.name].push(repo);
+      return y;
+    }, {})
+    console.log(groups)
+
+    let m: any[] = [];
+
+    for (const t in groups) {
+      console.log(t)
+      const grp = groups[t]?.reduce((w: any[], r: any) => {
+        const month = r.mergedAt.split('T')[0].split('-')[1];
+        console.log(month);
+        if (!w[month]) {
+          w[month] = [];
+        }
+        w[month].push(r);
+        return w;
+      }, {})
+
+      m.push( {key:t, grp} )
+      console.log(grp)
+    }
+    console.log(m)
+    return m
+  }
 
   const isViewerCodeOwner = (reviewRequests: any) => reviewRequests.nodes.some((req: any) => req.requestedReviewer.isViewer);
   const isViewerParticipant = (participants: any) => participants.nodes.some((participant: any) => participant.isViewer)
@@ -140,11 +175,12 @@ function App() {
   const filterDependabot = (pr: any) => !showDependabotPRs || pr.author.login !== 'dependabot';
   const combinedPRs = PRs.length > 0 ? PRs.filter(filterCombined) : null;
   const displayPRs = combinedPRs && combinedPRs.length > 0 ? combinedPRs.filter(filterDependabot).map(pr => <PR key={pr.url} pr={pr} />) : null;
+  const combinedGitHubPRs = GitHubPRs.length > 0 ? GitHubPRs.filter(filterCombined).filter(filterDependabot) : null;
+  const combinedGitHubPRStats = reduceGitHubPRStats(combinedGitHubPRs);
+  // const displayGitHubPRs = combinedGitHubPRs && combinedGitHubPRs.length > 0 ? combinedGitHubPRs.filter(filterDependabot).map(pr => <PR key={pr.url} pr={pr} />) : null;
+  const displayGitHubPRs = combinedGitHubPRStats && combinedGitHubPRStats.length > 0 ? combinedGitHubPRStats.map(repo => <GitHubStats key={repo.key} dates={repo.grp} />) : null;
+
   const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => setIntervalInput(parseInt(e.target.value));
-
-
-  const innerSourcePRsFiltered = combinedPRs && combinedPRs.length > 0 ? innerSourcePRs.filter(filterDependabot).map(pr => <PR key={pr.url} pr={pr} />) : null;
-
 
   if (!config.token || !config.owner || !config.team) {
     return (
@@ -170,7 +206,8 @@ function App() {
 
   return <div>
     <div className="App">{displayPRs}</div>
-    <div>{innerSourceStatsFiltered}</div>
+    <div>------{displayGitHubPRs?.length}-------</div>
+    <div>{displayGitHubPRs}</div>
   </div>
 }
 

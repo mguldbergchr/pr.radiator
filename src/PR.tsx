@@ -1,6 +1,7 @@
 import React from 'react';
 import { addWeeks, addDays, addHours, isAfter, formatRFC3339, formatDistanceToNowStrict } from 'date-fns';
 import sortByCreatedAt from './utils';
+import { preProcessFile } from 'typescript';
 
 type Event = {
 	createdAt: string;
@@ -11,7 +12,7 @@ type Event = {
 const combineReviewsAndComments = (reviews: any, comments: any) => {
 	const events: Event[] = [];
 
-  reviews.nodes.forEach((review: any) => {
+  reviews.nodes?.forEach((review: any) => {
     const event: Event = {
       createdAt: review.createdAt,
       author: review.author.login,
@@ -31,7 +32,29 @@ const combineReviewsAndComments = (reviews: any, comments: any) => {
 
   return events.sort(sortByCreatedAt);
 }
+const combineReviewsAndCommentsGitHubStats = (reviews: any, comments: any, mergeDateTime: any) => {
+	const events: Event[] = [];
 
+  reviews.nodes?.forEach((review: any) => {
+    const event: Event = {
+      createdAt: review.createdAt,
+      author: review.author.login,
+      state: review.state,
+    }
+    events.push(event);
+  })
+
+  comments.nodes.forEach((comment: any) => {
+    const event: Event = {
+      createdAt: comment.createdAt,
+      author: comment.author.login,
+      state: "ISSUECOMMENTED",
+    }
+    events.push(event);
+  })
+
+  return events.sort(sortByCreatedAt);
+}
 const getAgeString = (createdAt: Date) => {
   const current = new Date();
   if (isAfter(createdAt, addHours(current, -1))) {
@@ -78,7 +101,8 @@ const TimelineEvent = (props: Event) => {
   return null;
 }
 
-const PR = (props: any) => {
+export const PR = (props: any) => {
+  console.log(props.pr)
   const { createdAt, reviews, comments, baseRefName, author, headRefOid, timeline, url, repository, title } = props.pr;
   const createdAtDate = new Date(createdAt);
   const events = combineReviewsAndComments(reviews, comments);
@@ -96,4 +120,19 @@ const PR = (props: any) => {
   );
 }
 
-export default PR;
+export const GitHubStats = (props: any) => {
+  console.log(props)
+  const { reviews, comments, baseRefName, author, headRefOid, timeline, url, repository, title, mergedAt } = props.pr;
+  const mergedAtDate = new Date(mergedAt);
+  const events = combineReviewsAndCommentsGitHubStats(reviews, comments, mergedAt);
+  const commitState = getCommitState(headRefOid, timeline);
+
+  return (
+    <div>
+    {/* {baseRefName} {author.login} {commitState}&nbsp;
+      <a href={url} target="_blank" rel="noopener noreferrer">{`${repository.name}/pull/${props.pr.number}`}</a>&nbsp; */}
+      <h1>hello</h1>
+      {/* {events.map((event) => <TimelineEvent key={mergedAt} {...event} />)} */}
+    </div>
+  );
+}

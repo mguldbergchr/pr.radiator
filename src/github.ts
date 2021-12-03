@@ -49,30 +49,37 @@ const BatchQueryPRs = (owner: string, repos: string[]) => {
 
   return `query PRs { ${batchedRepos} }`
 };
-const graphQlQuery = (owner: string, repos: string[]) => {
+
+const GitHubQuery = (owner: string, repos: string[]) => {
 
   const batchedRepos = repos.map((repo, index) => {
     const repoFieldAlias = 'alias' + index;
-    return `${repoFieldAlias}:repository(owner: "${owner}", name: "${repo}") {name pullRequests(first: 20, states: OPEN) {nodes {
-		title url createdAt baseRefName headRefOid isDraft number
-		participants (first: 10) { nodes { isViewer login }}
-		reviewRequests(first:20) {nodes {asCodeOwner requestedReviewer { __typename ... on User { login isViewer }}}}
-		repository { name }
-		author { login }
-		comments(first: 50) {nodes {
-      createdAt author { login }
-    }}
-		reviews(first: 50) {nodes {
-      state createdAt author { login }
-    }}
-    timeline (first: 50) {nodes {
-      typename: __typename ... on Commit { oid message status { state } }
-    }}
+    return `${repoFieldAlias}:repository(owner: "${owner}", name: "${repo}") {name pullRequests(last: 50, states: [MERGED], labels: ["Ready for Online Review"]) {nodes {
+      title url createdAt mergedAt baseRefName number 
+      participants (first: 10) { nodes { isViewer login }}
+      reviewRequests(first:20) {nodes 
+          {asCodeOwner requestedReviewer 
+              { __typename ... on User 
+                  { login isViewer }}
+              }
+          }
+      repository { name }
+      author { login }
+      comments(first: 50) {nodes {
+        createdAt author { login }
+      }}
+      reviews(first: 50) {nodes {
+        state createdAt author { login }
+      }}
+      timeline (first: 50) {nodes {
+        typename: __typename ... on Commit { oid message status { state } }
+      }}
 }}}`;
   }).join(' ');
 
   return `query PRs { ${batchedRepos} }`
 };
+
 const chunks = (array: string[], chunk_size: number) =>
   Array(Math.ceil(array.length / chunk_size))
     .fill(undefined)
@@ -102,7 +109,7 @@ export const queryGitHub = (token: string, owner: string, repos: string[]) => {
       url: 'https://api.github.com/graphql',
       method: 'post',
       headers: { Authorization: `Bearer ${token}` },
-      data: { query: BatchQueryPRs(owner, repos) }
+      data: { query: GitHubQuery(owner, repos) }
     });
   });
 };
@@ -142,23 +149,25 @@ export const queryTeamRepos = async (token: string, owner: string, team: string)
 };
 
 export const queryPRs = async (token: string, owner: string, repos: string[]) => {
-  const results = await Promise.all(maxConcurrentBatchQueryPRs(token, owner, repos));
-  const resultPRs: any[] = [];
-  results.forEach((result: any) => {
-    const keys = Object.keys(result.data.data);
-    keys.forEach((key) => {
-      const pullRequests = result.data.data[key]?.pullRequests.nodes ?? [];
-      if (pullRequests.length > 0) {
-        resultPRs.push(...pullRequests);
-      }
-    });
-  });
+  // const results = await Promise.all(maxConcurrentBatchQueryPRs(token, owner, repos));
+  // const resultPRs: any[] = [];
+  // results.forEach((result: any) => {
+  //   const keys = Object.keys(result.data.data);
+  //   keys.forEach((key) => {
+  //     const pullRequests = result.data.data[key]?.pullRequests.nodes ?? [];
+  //     if (pullRequests.length > 0) {
+  //       resultPRs.push(...pullRequests);
+  //     }
+  //   });
+  // });
 
-  return resultPRs.sort(sortByCreatedAt).filter(pr => !pr.isDraft);
+  // return resultPRs.sort(sortByCreatedAt).filter(pr => !pr.isDraft);
 }
 export const queryGitHubForPRStats = async (token: string, owner: string, repos: string[]) => {
-  const results = await Promise.all(maxConcurrentBatchQueryPRs(token, owner, repos));
+  const results = await Promise.all(queryGitHub(token, owner, repos));
   const resultPRs: any[] = [];
+  console.log(results);
+
   results.forEach((result: any) => {
     const keys = Object.keys(result.data.data);
     keys.forEach((key) => {
