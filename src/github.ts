@@ -54,7 +54,7 @@ const GitHubQuery = (owner: string, repos: string[]) => {
 
   const batchedRepos = repos.map((repo, index) => {
     const repoFieldAlias = 'alias' + index;
-    return `${repoFieldAlias}:repository(owner: "${owner}", name: "${repo}") {name pullRequests(last: 50, states: [MERGED], labels: ["Ready for Online Review"]) {nodes {
+    return `${repoFieldAlias}:repository(owner: "${owner}", name: "${repo}") {name pullRequests(first: 50, states: [MERGED], labels: ["Ready for Online Review"]) {nodes {
       title url createdAt mergedAt baseRefName number 
       participants (first: 10) { nodes { isViewer login }}
       reviewRequests(first:20) {nodes 

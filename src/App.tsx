@@ -2,6 +2,7 @@ import React, { useEffect, useState, FormEvent, useRef } from 'react';
 import { PR, GitHubStats } from './PR';
 import { queryPRs, queryTeamRepos, queryGitHubForPRStats } from './github';
 import { group } from 'console';
+import { getNameOfDeclaration } from 'typescript';
 
 function useInterval(callback: any, delay: any) {
   const savedCallback = useRef();
@@ -139,7 +140,16 @@ function App() {
 
   const reduceGitHubPRStats = (x: any[] | null) => {
     console.log(x)
+    // const groups = x?.reduce((y, repo) => {
+
+    //   if (!y[repo.repository.name]) {
+    //     y[repo.repository.name] = [];
+    //   }
+    //   y[repo.repository.name].push(repo);
+    //   return y;
+    // }, {})
     const groups = x?.reduce((y, repo) => {
+
       if (!y[repo.repository.name]) {
         y[repo.repository.name] = [];
       }
@@ -147,26 +157,15 @@ function App() {
       return y;
     }, {})
     console.log(groups)
+    let arr: any[] = [];
+    if (!(groups == null || groups == undefined))
+      Object.keys(groups).map(function (key) {
+        arr?.push({ "repoName": key, "repoData": groups[key] })
+        return arr;
+      });
+    console.log(arr);
 
-    let m: any[] = [];
-
-    for (const t in groups) {
-      console.log(t)
-      const grp = groups[t]?.reduce((w: any[], r: any) => {
-        const month = r.mergedAt.split('T')[0].split('-')[1];
-        console.log(month);
-        if (!w[month]) {
-          w[month] = [];
-        }
-        w[month].push(r);
-        return w;
-      }, {})
-
-      m.push( {key:t, grp} )
-      console.log(grp)
-    }
-    console.log(m)
-    return m
+    return arr
   }
 
   const isViewerCodeOwner = (reviewRequests: any) => reviewRequests.nodes.some((req: any) => req.requestedReviewer.isViewer);
@@ -178,8 +177,8 @@ function App() {
   const combinedGitHubPRs = GitHubPRs.length > 0 ? GitHubPRs.filter(filterCombined).filter(filterDependabot) : null;
   const combinedGitHubPRStats = reduceGitHubPRStats(combinedGitHubPRs);
   // const displayGitHubPRs = combinedGitHubPRs && combinedGitHubPRs.length > 0 ? combinedGitHubPRs.filter(filterDependabot).map(pr => <PR key={pr.url} pr={pr} />) : null;
-  const displayGitHubPRs = combinedGitHubPRStats && combinedGitHubPRStats.length > 0 ? combinedGitHubPRStats.map(repo => <GitHubStats key={repo.key} dates={repo.grp} />) : null;
-
+  const displayGitHubPRs = combinedGitHubPRStats && combinedGitHubPRStats.length > 0 ? combinedGitHubPRStats.map((item, idx) => <GitHubStats key={idx} propItem={item} />) : null;
+  
   const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => setIntervalInput(parseInt(e.target.value));
 
   if (!config.token || !config.owner || !config.team) {
@@ -207,7 +206,21 @@ function App() {
   return <div>
     <div className="App">{displayPRs}</div>
     <div>------{displayGitHubPRs?.length}-------</div>
-    <div>{displayGitHubPRs}</div>
+
+    <div>
+      <table>
+        <tr>
+          <th>Repo Name</th>
+          <th>Aug</th>
+          <th>Sept</th>
+          <th>Oct</th>
+          <th>Nov</th>
+          <th>Dec</th>
+        </tr>
+        {displayGitHubPRs}
+
+      </table>
+    </div>
   </div>
 }
 
