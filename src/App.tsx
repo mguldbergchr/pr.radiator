@@ -138,16 +138,9 @@ function App() {
     }
   }, [config]);
 
-  const reduceGitHubPRStats = (x: any[] | null) => {
+  const sortGitHubPRsByRepo = (x: any[] | null) => {
     console.log(x)
-    // const groups = x?.reduce((y, repo) => {
-
-    //   if (!y[repo.repository.name]) {
-    //     y[repo.repository.name] = [];
-    //   }
-    //   y[repo.repository.name].push(repo);
-    //   return y;
-    // }, {})
+ 
     const groups = x?.reduce((y, repo) => {
 
       if (!y[repo.repository.name]) {
@@ -156,6 +149,7 @@ function App() {
       y[repo.repository.name].push(repo);
       return y;
     }, {})
+    
     console.log(groups)
     let arr: any[] = [];
     if (!(groups == null || groups == undefined))
@@ -175,8 +169,7 @@ function App() {
   const combinedPRs = PRs.length > 0 ? PRs.filter(filterCombined) : null;
   const displayPRs = combinedPRs && combinedPRs.length > 0 ? combinedPRs.filter(filterDependabot).map(pr => <PR key={pr.url} pr={pr} />) : null;
   const combinedGitHubPRs = GitHubPRs.length > 0 ? GitHubPRs.filter(filterCombined).filter(filterDependabot) : null;
-  const combinedGitHubPRStats = reduceGitHubPRStats(combinedGitHubPRs);
-  // const displayGitHubPRs = combinedGitHubPRs && combinedGitHubPRs.length > 0 ? combinedGitHubPRs.filter(filterDependabot).map(pr => <PR key={pr.url} pr={pr} />) : null;
+  const combinedGitHubPRStats = sortGitHubPRsByRepo(combinedGitHubPRs);
   const displayGitHubPRs = combinedGitHubPRStats && combinedGitHubPRStats.length > 0 ? combinedGitHubPRStats.map((item, idx) => <GitHubStats key={idx} propItem={item} />) : null;
 
   const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => setIntervalInput(parseInt(e.target.value));

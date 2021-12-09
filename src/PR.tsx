@@ -98,6 +98,7 @@ export const PR = (props: any) => {
     </div>
   );
 }
+
 const combineReviewsAndCommentsGitHubStats = (data: any[]) => {
   console.log(data)
   const events: Event[] = [];
@@ -128,14 +129,9 @@ const combineReviewsAndCommentsGitHubStats = (data: any[]) => {
 }
 export const GitHubStats = (props: any) => {
 
-  // let m: any[] = [];
-
-  // for (const t in props.namr) {
   console.log(props)
   console.log(props.propItem)
 
-  // const perMonth = props.propItem.repoData?.forEach((w: any) => {
-  //   console.log(w)
   const grp = props.propItem.repoData?.reduce((w: any[], r: any) => {
     const month = r.mergedAt.split('T')[0].split('-')[1];
     console.log(month);
@@ -155,21 +151,7 @@ export const GitHubStats = (props: any) => {
 
   console.log(arr)
   console.log(arr.filter((y: any) => y.month == '08').map((r:any) => r.prs.length)[0])
-  // return grp;
 
-  // });
-
-  //   m.push({ key: t, grp })
-  // console.log(grp)
-
-  // console.log(m)
-
-  //const { reviews, comments, baseRefName, author, headRefOid, timeline, url, repository, title, mergedAt } = props.pr;
-  // const mergedAtDate = new Date(mergedAt);
-  // const events = combineReviewsAndCommentsGitHubStats(props.pr);
-  // console.log(events);
-
-  // const commitState = getCommitState(headRefOid, timeline);
 
   return (
     <tr>
@@ -182,8 +164,6 @@ export const GitHubStats = (props: any) => {
       <td>{arr.filter((y: any) => y.month == '11').map((r:any) => r.prs.length)[0]}</td>
       <td>{arr.filter((y: any) => y.month == '12').map((r:any) => r.prs.length)[0]}</td>
     </tr>
-    //   {baseRefName} {author.login} {commitState}&nbsp;
-    // <a href={url} target="_blank" rel="noopener noreferrer">{`${repository.name}/pull/${props.pr.number}`}</a>&nbsp;
-    // {events.map((event) => <TimelineEvent key={mergedAt} {...event} />)}
+
   );
 }
