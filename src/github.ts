@@ -102,7 +102,7 @@ export const maxConcurrentBatchQueryPRs = (token: string, owner: string, repos: 
 
 export const queryGitHub = (token: string, owner: string, repos: string[]) => {
 
-  const result = chunks(repos, Math.ceil(repos.length / 6));
+  const result = chunks(repos, Math.ceil(repos.length / 15));
 
   return result.map((repos: string[]) => {
     return axios({

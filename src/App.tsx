@@ -178,7 +178,7 @@ function App() {
   const combinedGitHubPRStats = reduceGitHubPRStats(combinedGitHubPRs);
   // const displayGitHubPRs = combinedGitHubPRs && combinedGitHubPRs.length > 0 ? combinedGitHubPRs.filter(filterDependabot).map(pr => <PR key={pr.url} pr={pr} />) : null;
   const displayGitHubPRs = combinedGitHubPRStats && combinedGitHubPRStats.length > 0 ? combinedGitHubPRStats.map((item, idx) => <GitHubStats key={idx} propItem={item} />) : null;
-  
+
   const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => setIntervalInput(parseInt(e.target.value));
 
   if (!config.token || !config.owner || !config.team) {
@@ -209,16 +209,19 @@ function App() {
 
     <div>
       <table>
-        <tr>
-          <th>Repo Name</th>
-          <th>Aug</th>
-          <th>Sept</th>
-          <th>Oct</th>
-          <th>Nov</th>
-          <th>Dec</th>
-        </tr>
-        {displayGitHubPRs}
-
+        <thead>
+          <tr>
+            <th>Repo Name</th>
+            <th>Aug</th>
+            <th>Sept</th>
+            <th>Oct</th>
+            <th>Nov</th>
+            <th>Dec</th>
+          </tr>
+        </thead>
+        <tbody>
+          {displayGitHubPRs}
+        </tbody>
       </table>
     </div>
   </div>
