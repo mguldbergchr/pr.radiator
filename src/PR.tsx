@@ -134,11 +134,16 @@ export const GitHubStats = (props: any) => {
 
   const grp = props.propItem.repoData?.reduce((w: any[], r: any) => {
     const month = r.mergedAt.split('T')[0].split('-')[1];
-    console.log(month);
-    if (!w[month]) {
-      w[month] = [];
+    const year = r.mergedAt.split('T')[0].split('-')[0];
+    // console.log(year)
+    // console.log(month);
+    if (parseInt(year) >= 2023) {
+
+      if (!w[month]) {
+        w[month] = [];
+      }
+      w[month].push(r);
     }
-    w[month].push(r);
     return w;
   }, {})
 
@@ -150,19 +155,19 @@ export const GitHubStats = (props: any) => {
     });
 
   console.log(arr)
-  console.log(arr.filter((y: any) => y.month == '08').map((r:any) => r.prs.length)[0])
+  console.log(arr.filter((y: any) => y.month == '08').map((r: any) => r.prs.length)[0])
 
 
   return (
     <tr>
       <td>{props.propItem.repoName}</td>
       <td>
-        {arr.filter((y: any) => y.month == '08').map((r:any) => r.prs.length)[0]}
+        {arr.filter((y: any) => y.month == '03').map((r: any) => r.prs.length)[0]}
       </td>
-      <td>{arr.filter((y: any) => y.month == '09').map((r:any) => r.prs.length)[0]}</td>
-      <td>{arr.filter((y: any) => y.month == '10').map((r:any) => r.prs.length)[0]}</td>
-      <td>{arr.filter((y: any) => y.month == '11').map((r:any) => r.prs.length)[0]}</td>
-      <td>{arr.filter((y: any) => y.month == '12').map((r:any) => r.prs.length)[0]}</td>
+      <td>{arr.filter((y: any) => y.month == '04').map((r: any) => r.prs.length)[0]}</td>
+      <td>{arr.filter((y: any) => y.month == '05').map((r: any) => r.prs.length)[0]}</td>
+      <td>{arr.filter((y: any) => y.month == '06').map((r: any) => r.prs.length)[0]}</td>
+      <td>{arr.filter((y: any) => y.month == '07').map((r: any) => r.prs.length)[0]}</td>
     </tr>
 
   );

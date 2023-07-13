@@ -54,26 +54,33 @@ const GitHubQuery = (owner: string, repos: string[]) => {
 
   const batchedRepos = repos.map((repo, index) => {
     const repoFieldAlias = 'alias' + index;
-    return `${repoFieldAlias}:repository(owner: "${owner}", name: "${repo}") {name pullRequests(first: 50, states: [MERGED], labels: ["Ready for Online Review"]) {nodes {
+    // return `${repoFieldAlias}:repository(owner: "${owner}", name: "${repo}") {name pullRequests(first: 50, states: [MERGED], labels: ["Ready for Online Review"]) {nodes {
+      
+//       title url createdAt mergedAt baseRefName number 
+//       participants (first: 10) { nodes { isViewer login }}
+//       reviewRequests(first:20) {nodes 
+//           {asCodeOwner requestedReviewer 
+//               { __typename ... on User 
+//                   { login isViewer }}
+//               }
+//           }
+//       repository { name }
+//       author { login }
+//       comments(last: 10) {nodes {
+//         createdAt author { login }
+//       }}
+//       reviews(last: 10) {nodes {
+//         state createdAt author { login }
+//       }}
+//       timeline (last: 10) {nodes {
+//         typename: __typename ... on Commit { oid message status { state } }
+//       }}
+// }}}`;
+    return `${repoFieldAlias}:repository(owner: "${owner}", name: "${repo}") {name pullRequests(last: 50, states: [MERGED]) {nodes {
+
       title url createdAt mergedAt baseRefName number 
-      participants (first: 10) { nodes { isViewer login }}
-      reviewRequests(first:20) {nodes 
-          {asCodeOwner requestedReviewer 
-              { __typename ... on User 
-                  { login isViewer }}
-              }
-          }
       repository { name }
       author { login }
-      comments(first: 50) {nodes {
-        createdAt author { login }
-      }}
-      reviews(first: 50) {nodes {
-        state createdAt author { login }
-      }}
-      timeline (first: 50) {nodes {
-        typename: __typename ... on Commit { oid message status { state } }
-      }}
 }}}`;
   }).join(' ');
 
@@ -102,7 +109,7 @@ export const maxConcurrentBatchQueryPRs = (token: string, owner: string, repos: 
 
 export const queryGitHub = (token: string, owner: string, repos: string[]) => {
 
-  const result = chunks(repos, Math.ceil(repos.length / 15));
+  const result = chunks(repos, Math.ceil(repos.length / 5));
 
   return result.map((repos: string[]) => {
     return axios({
@@ -130,7 +137,7 @@ export const queryTeamRepos = async (token: string, owner: string, team: string)
     });
 
     const repositories: any = result.data.data.organization.team.repositories;
-
+    console.log('repositories',result.data);
     repositories.edges.forEach((repo: any) => {
       if (repo.permission === 'ADMIN') {
         repoNames.push(repo.node.name);
@@ -164,9 +171,10 @@ export const queryPRs = async (token: string, owner: string, repos: string[]) =>
   // return resultPRs.sort(sortByCreatedAt).filter(pr => !pr.isDraft);
 }
 export const queryGitHubForPRStats = async (token: string, owner: string, repos: string[]) => {
+  console.log('repos',repos);
   const results = await Promise.all(queryGitHub(token, owner, repos));
   const resultPRs: any[] = [];
-  console.log(results);
+  console.log('inqueryGitHub',results);
 
   results.forEach((result: any) => {
     const keys = Object.keys(result.data.data);
